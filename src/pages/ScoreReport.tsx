@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import ScoreGauge from '@/components/ScoreGauge';
 import ScoreBreakdownCard from '@/components/ScoreBreakdownCard';
 import WalletAvatar from '@/components/WalletAvatar';
-import { useModernWeb3 } from '@/contexts/ModernWeb3Context'; // Sửa import
+import { useModernWeb3 } from '@/contexts/ModernWeb3Context';
 import { fetchWalletScore, ScoreData } from '@/services/scoreService';
 import { 
   Clock, 
@@ -20,7 +20,7 @@ import { toast } from '@/hooks/use-toast';
 
 const ScoreReport = () => {
   const { address } = useParams();
-  const { account } = useModernWeb3(); // Sửa destructuring
+  const { account } = useModernWeb3();
   const [loading, setLoading] = useState(true);
   const [scoreData, setScoreData] = useState<ScoreData | null>(null);
   const [ensName, setEnsName] = useState<string | null>(null);
@@ -34,11 +34,6 @@ const ScoreReport = () => {
         setLoading(true);
         setError(null);
         
-        // TODO: Add ENS resolution if needed
-        // const name = await resolveENS(address);
-        // setEnsName(name);
-        
-        // Fetch score data
         const data = await fetchWalletScore(address);
         setScoreData(data);
       } catch (error) {
@@ -51,8 +46,6 @@ const ScoreReport = () => {
 
     loadScoreData();
   }, [address]);
-
-  console.log('Score data:', scoreData);
 
   const copyAddress = () => {
     if (address) {
@@ -68,19 +61,84 @@ const ScoreReport = () => {
     return `${addr.slice(0, 6)}...${addr.slice(-4)}`;
   };
 
+  // Cập nhật logic đánh giá theo thang điểm mới
   const getScoreColor = (score: number) => {
-    if (score >= 740) return 'text-green-600';
-    if (score >= 580) return 'text-yellow-600';
-    return 'text-red-600';
+    if (score >= 90) return 'text-green-600';      // Xuất sắc
+    if (score >= 80) return 'text-blue-600';       // Tốt  
+    if (score >= 65) return 'text-yellow-600';     // Trung bình khá
+    if (score >= 50) return 'text-orange-600';     // Trung bình
+    if (score >= 30) return 'text-red-600';        // Yếu
+    return 'text-red-800';                         // Rất yếu
   };
 
-  const getRiskBadgeColor = (riskLevel: string) => {
-    switch (riskLevel) {
-      case 'Low': return 'bg-green-100 text-green-800';
-      case 'Medium': return 'bg-yellow-100 text-yellow-800';
-      case 'High': return 'bg-red-100 text-red-800';
-      default: return 'bg-gray-100 text-gray-800';
+  const getScoreCategory = (score: number) => {
+    if (score >= 90) return 'Xuất sắc';
+    if (score >= 80) return 'Tốt';
+    if (score >= 65) return 'Trung bình khá';
+    if (score >= 50) return 'Trung bình';
+    if (score >= 30) return 'Yếu';
+    return 'Rất yếu';
+  };
+
+  const getRiskLevel = (score: number) => {
+    if (score >= 90) return 'Rất an toàn';
+    if (score >= 80) return 'An toàn';
+    if (score >= 65) return 'Trung bình thấp';
+    if (score >= 50) return 'Rủi ro nhẹ';
+    if (score >= 30) return 'Rủi ro cao';
+    return 'Rất rủi ro';
+  };
+
+  const getRiskBadgeColor = (score: number) => {
+    if (score >= 90) return 'bg-green-100 text-green-800';
+    if (score >= 80) return 'bg-blue-100 text-blue-800';
+    if (score >= 65) return 'bg-yellow-100 text-yellow-800';
+    if (score >= 50) return 'bg-orange-100 text-orange-800';
+    if (score >= 30) return 'bg-red-100 text-red-800';
+    return 'bg-red-200 text-red-900';
+  };
+
+  const getScoreDescription = (score: number) => {
+    if (score >= 90) {
+      return {
+        title: 'Hồ sơ tín dụng xuất sắc!',
+        description: 'Lịch sử trả nợ hoàn hảo, không bị thanh lý, nợ thấp, sử dụng đa dạng sản phẩm tài chính với hoạt động ổn định.',
+        recommendation: 'Bạn đủ điều kiện cho các sản phẩm DeFi cao cấp với lãi suất ưu đãi nhất.'
+      };
     }
+    if (score >= 80) {
+      return {
+        title: 'Hồ sơ tín dụng tốt',
+        description: 'Có thể từng vay lớn nhưng trả đúng hạn, có 1-2 hành vi trễ nhỏ, vẫn sử dụng DeFi chủ động và cẩn trọng.',
+        recommendation: 'Bạn có thể tiếp cận hầu hết các protocol DeFi với lãi suất cạnh tranh.'
+      };
+    }
+    if (score >= 65) {
+      return {
+        title: 'Hồ sơ tín dụng trung bình khá',
+        description: 'Từng bị thanh lý 1-2 lần nhưng tổng thể ổn, vay tương đối nhiều nhưng còn tài sản, credit mix hạn chế.',
+        recommendation: 'Cần cải thiện quản lý rủi ro và đa dạng hóa hoạt động DeFi.'
+      };
+    }
+    if (score >= 50) {
+      return {
+        title: 'Hồ sơ tín dụng trung bình',
+        description: 'Bắt đầu có dấu hiệu sử dụng vốn thiếu kiểm soát, có ít nhất 1 hành vi rủi ro rõ rệt.',
+        recommendation: 'Nên giảm tỷ lệ nợ và cải thiện thói quen quản lý tài chính.'
+      };
+    }
+    if (score >= 30) {
+      return {
+        title: 'Hồ sơ tín dụng yếu',
+        description: 'Thường xuyên bị thanh lý, vay vượt quá tài sản trung bình, tương tác bất thường hoặc ngắt quãng.',
+        recommendation: 'Cần xây dựng lại lịch sử tín dụng và cải thiện đáng kể thói quen tài chính.'
+      };
+    }
+    return {
+      title: 'Hồ sơ tín dụng rất yếu',
+      description: 'Vừa thiếu lịch sử, vừa đang mang nợ nặng, bỏ nợ/bị thanh lý hàng loạt, có dấu hiệu hoạt động bất thường.',
+      recommendation: 'Cần thời gian dài để xây dựng lại uy tín tài chính trước khi tiếp cận các sản phẩm vay mượn.'
+    };
   };
 
   if (loading) {
@@ -117,7 +175,6 @@ const ScoreReport = () => {
     );
   }
 
-  // Sửa lại breakdown items theo scoreService.ts (5 fields thay vì 6)
   const breakdownItems = [
     {
       title: 'Payment History',
@@ -160,6 +217,8 @@ const ScoreReport = () => {
       weight: '10%'
     }
   ];
+
+  const scoreInfo = getScoreDescription(scoreData.score);
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -230,9 +289,15 @@ const ScoreReport = () => {
                   </span>
                 </div>
                 <div className="flex justify-between items-center py-2 border-b border-gray-100">
-                  <span className="text-gray-600">Risk Level</span>
-                  <span className={`font-semibold px-2 py-1 rounded-full text-xs ${getRiskBadgeColor(scoreData.riskLevel)}`}>
-                    {scoreData.riskLevel} Risk
+                  <span className="text-gray-600">Nhóm đánh giá</span>
+                  <span className={`font-semibold ${getScoreColor(scoreData.score)}`}>
+                    {getScoreCategory(scoreData.score)}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center py-2 border-b border-gray-100">
+                  <span className="text-gray-600">Mức độ rủi ro</span>
+                  <span className={`font-semibold px-2 py-1 rounded-full text-xs ${getRiskBadgeColor(scoreData.score)}`}>
+                    {getRiskLevel(scoreData.score)}
                   </span>
                 </div>
                 <div className="flex justify-between items-center py-2 border-b border-gray-100">
@@ -244,30 +309,39 @@ const ScoreReport = () => {
               </div>
               
               <div className={`mt-6 p-4 rounded-lg ${
-                scoreData.score >= 740 ? 'bg-green-50' : 
-                scoreData.score >= 580 ? 'bg-yellow-50' : 'bg-red-50'
+                scoreData.score >= 90 ? 'bg-green-50' : 
+                scoreData.score >= 80 ? 'bg-blue-50' :
+                scoreData.score >= 65 ? 'bg-yellow-50' : 
+                scoreData.score >= 50 ? 'bg-orange-50' :
+                scoreData.score >= 30 ? 'bg-red-50' : 'bg-red-100'
               }`}>
                 <p className={`font-medium ${getScoreColor(scoreData.score)}`}>
-                  {scoreData.score >= 740 ? 'Excellent Credit Profile!' :
-                   scoreData.score >= 580 ? 'Good Credit Profile' : 'Credit Needs Improvement'}
+                  {scoreInfo.title}
                 </p>
-                <p className={`text-sm mt-1 ${
-                  scoreData.score >= 740 ? 'text-green-700' : 
-                  scoreData.score >= 580 ? 'text-yellow-700' : 'text-red-700'
+                <p className={`text-sm mt-2 ${
+                  scoreData.score >= 90 ? 'text-green-700' : 
+                  scoreData.score >= 80 ? 'text-blue-700' :
+                  scoreData.score >= 65 ? 'text-yellow-700' : 
+                  scoreData.score >= 50 ? 'text-orange-700' :
+                  scoreData.score >= 30 ? 'text-red-700' : 'text-red-800'
                 }`}>
-                  {scoreData.score >= 740 ? 
-                    'Your score qualifies you for premium lending rates and exclusive DeFi opportunities.' :
-                    scoreData.score >= 580 ?
-                    'You qualify for most DeFi lending protocols with competitive rates.' :
-                    'Focus on improving payment history and reducing debt utilization to access better rates.'
-                  }
+                  {scoreInfo.description}
+                </p>
+                <p className={`text-sm mt-2 font-medium ${
+                  scoreData.score >= 90 ? 'text-green-800' : 
+                  scoreData.score >= 80 ? 'text-blue-800' :
+                  scoreData.score >= 65 ? 'text-yellow-800' : 
+                  scoreData.score >= 50 ? 'text-orange-800' :
+                  scoreData.score >= 30 ? 'text-red-800' : 'text-red-900'
+                }`}>
+                  💡 {scoreInfo.recommendation}
                 </p>
               </div>
             </div>
           </div>
         </div>
 
-        {/* Breakdown Cards */}
+        {/* Breakdown Cards - giữ nguyên phần này */}
         <div className="mb-8">
           <h2 className="text-2xl font-bold text-gray-900 mb-6">Score Breakdown</h2>
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -289,12 +363,14 @@ const ScoreReport = () => {
                   </div>
                 </div>
                 
-                {/* Progress bar */}
                 <div className="w-full bg-gray-200 rounded-full h-2 mb-3">
                   <div 
                     className={`h-2 rounded-full ${
-                      item.score >= 80 ? 'bg-green-500' : 
-                      item.score >= 60 ? 'bg-yellow-500' : 'bg-red-500'
+                      item.score >= 90 ? 'bg-green-500' : 
+                      item.score >= 80 ? 'bg-blue-500' :
+                      item.score >= 65 ? 'bg-yellow-500' :
+                      item.score >= 50 ? 'bg-orange-500' :
+                      item.score >= 30 ? 'bg-red-500' : 'bg-red-600'
                     }`}
                     style={{ width: `${item.score}%` }}
                   ></div>
@@ -313,23 +389,37 @@ const ScoreReport = () => {
 
         {/* Additional Info */}
         <div className="bg-white rounded-2xl p-6 shadow-sm">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">How Your Score is Calculated</h3>
-          <div className="grid md:grid-cols-2 gap-6 text-sm text-gray-600">
-            <div>
-              <h4 className="font-medium text-gray-900 mb-2">Based on FICO methodology adapted for DeFi:</h4>
-              <ul className="space-y-1">
-                <li>• Payment History (35%): Liquidation history and repayment consistency</li>
-                <li>• Amounts Owed (30%): Current debt utilization across protocols</li>
-                <li>• Credit History (15%): Length and consistency of DeFi activity</li>
-              </ul>
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">Phân loại điểm tín dụng</h3>
+          <div className="grid md:grid-cols-3 gap-6 text-sm">
+            <div className="space-y-2">
+              <div className="flex justify-between items-center p-2 rounded bg-green-50">
+                <span className="font-medium">90-100: Xuất sắc</span>
+                <span className="text-green-600 font-bold">Rất an toàn</span>
+              </div>
+              <div className="flex justify-between items-center p-2 rounded bg-blue-50">
+                <span className="font-medium">80-89: Tốt</span>
+                <span className="text-blue-600 font-bold">An toàn</span>
+              </div>
             </div>
-            <div>
-              <h4 className="font-medium text-gray-900 mb-2">Additional factors:</h4>
-              <ul className="space-y-1">
-                <li>• Credit Mix (10%): Diversity of protocol interactions</li>
-                <li>• New Credit (10%): Recent protocol interactions and inquiries</li>
-                <li>• Data sourced from Covalent API and on-chain analysis</li>
-              </ul>
+            <div className="space-y-2">
+              <div className="flex justify-between items-center p-2 rounded bg-yellow-50">
+                <span className="font-medium">65-79: Trung bình khá</span>
+                <span className="text-yellow-600 font-bold">TB thấp</span>
+              </div>
+              <div className="flex justify-between items-center p-2 rounded bg-orange-50">
+                <span className="font-medium">50-64: Trung bình</span>
+                <span className="text-orange-600 font-bold">Rủi ro nhẹ</span>
+              </div>
+            </div>
+            <div className="space-y-2">
+              <div className="flex justify-between items-center p-2 rounded bg-red-50">
+                <span className="font-medium">30-49: Yếu</span>
+                <span className="text-red-600 font-bold">Rủi ro cao</span>
+              </div>
+              <div className="flex justify-between items-center p-2 rounded bg-red-100">
+                <span className="font-medium">0-29: Rất yếu</span>
+                <span className="text-red-800 font-bold">Rất rủi ro</span>
+              </div>
             </div>
           </div>
         </div>
