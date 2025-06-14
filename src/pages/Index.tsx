@@ -28,7 +28,6 @@ const Index = () => {
 
     setSearching(true);
     try {
-      // Simple validation for address format
       if (ethers.isAddress(inputAddress) || inputAddress.endsWith('.eth')) {
         navigate(`/score/${inputAddress}`);
       } else {
