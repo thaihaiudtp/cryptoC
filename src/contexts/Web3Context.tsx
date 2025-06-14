@@ -1,7 +1,13 @@
 
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { ethers } from 'ethers';
+import { MetaMaskInpageProvider } from '@metamask/providers';
 
+declare global {
+  interface Window {
+    ethereum?: MetaMaskInpageProvider;
+  }
+}
 interface Web3ContextType {
   account: string | null;
   ensName: string | null;
@@ -33,7 +39,7 @@ export const Web3Provider = ({ children }: { children: ReactNode }) => {
       setConnecting(true);
       console.log('Creating provider...');
       
-      const provider = new ethers.BrowserProvider(window.ethereum);
+      const provider = new ethers.BrowserProvider(window.ethereum as unknown as ethers.Eip1193Provider);
       console.log('Provider created:', provider);
       
       console.log('Requesting accounts...');
@@ -84,7 +90,7 @@ export const Web3Provider = ({ children }: { children: ReactNode }) => {
       if (window.ethereum) {
         try {
           console.log('Checking existing wallet connection...');
-          const provider = new ethers.BrowserProvider(window.ethereum);
+          const provider = new ethers.BrowserProvider(window.ethereum as unknown as ethers.Eip1193Provider);
           const accounts = await provider.send('eth_accounts', []);
           
           if (accounts.length > 0) {
@@ -114,14 +120,14 @@ export const Web3Provider = ({ children }: { children: ReactNode }) => {
 
   // Listen for account changes
   useEffect(() => {
-    if (window.ethereum) {
+    const eth = window.ethereum;
+    if (eth) {
       const handleAccountsChanged = (accounts: string[]) => {
         console.log('Accounts changed:', accounts);
         if (accounts.length === 0) {
           disconnectWallet();
         } else if (accounts[0] !== account) {
           setAccount(accounts[0]);
-          // Clear ENS name and refetch
           setEnsName(null);
           if (provider) {
             provider.lookupAddress(accounts[0]).then(setEnsName).catch(() => {});
@@ -129,10 +135,9 @@ export const Web3Provider = ({ children }: { children: ReactNode }) => {
         }
       };
 
-      window.ethereum.on('accountsChanged', handleAccountsChanged);
-      
+      eth.on('accountsChanged', handleAccountsChanged);
       return () => {
-        window.ethereum.removeListener('accountsChanged', handleAccountsChanged);
+        eth.removeListener('accountsChanged', handleAccountsChanged);
       };
     }
   }, [account, provider]);
@@ -162,9 +167,4 @@ export const useWeb3 = () => {
   return context;
 };
 
-// Extend Window interface for TypeScript
-declare global {
-  interface Window {
-    ethereum?: any;
-  }
-}
+

@@ -47,6 +47,7 @@
     "@walletconnect/utils": "^2.21.2",
     "@web3modal/siwe": "^5.1.11",
     "@web3modal/wagmi": "^5.1.11",
+    "chains": "^0.2.1",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "cmdk": "^1.0.0",

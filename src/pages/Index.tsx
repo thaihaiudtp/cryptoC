@@ -15,7 +15,8 @@ const Index = () => {
 
   const handleCheckScore = async () => {
     const inputAddress = walletAddress.trim();
-    
+
+
     if (!inputAddress) {
       toast({
         title: "Invalid Input",
@@ -44,6 +45,7 @@ const Index = () => {
       setSearching(false);
     }
   };
+
 
   const handleMyScore = () => {
     if (account) {
