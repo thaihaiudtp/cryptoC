@@ -1,19 +1,17 @@
-
 import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import ScoreGauge from '@/components/ScoreGauge';
 import ScoreBreakdownCard from '@/components/ScoreBreakdownCard';
 import WalletAvatar from '@/components/WalletAvatar';
-import { useWeb3 } from '@/contexts/Web3Context';
+import { useModernWeb3 } from '@/contexts/ModernWeb3Context'; // Sửa import
 import { fetchWalletScore, ScoreData } from '@/services/scoreService';
 import { 
   Clock, 
   PieChart, 
   TrendingUp, 
   Shield, 
-  Zap, 
-  DollarSign,
+  Zap,
   ArrowLeft,
   Copy,
   ExternalLink
@@ -22,7 +20,7 @@ import { toast } from '@/hooks/use-toast';
 
 const ScoreReport = () => {
   const { address } = useParams();
-  const { provider } = useWeb3();
+  const { account } = useModernWeb3(); // Sửa destructuring
   const [loading, setLoading] = useState(true);
   const [scoreData, setScoreData] = useState<ScoreData | null>(null);
   const [ensName, setEnsName] = useState<string | null>(null);
@@ -36,29 +34,25 @@ const ScoreReport = () => {
         setLoading(true);
         setError(null);
         
-        // Try to resolve ENS name if we have a provider
-        if (provider && address) {
-          try {
-            const name = await provider.lookupAddress(address);
-            setEnsName(name);
-          } catch (error) {
-            console.log('No ENS name found for address');
-          }
-        }
+        // TODO: Add ENS resolution if needed
+        // const name = await resolveENS(address);
+        // setEnsName(name);
         
-        // Fetch score data with just the address parameter
+        // Fetch score data
         const data = await fetchWalletScore(address);
         setScoreData(data);
       } catch (error) {
         console.error('Failed to load score data:', error);
-        setError('Failed to load credit score data');
+        setError('Failed to load credit score data. Please check the wallet address and try again.');
       } finally {
         setLoading(false);
       }
     };
 
     loadScoreData();
-  }, [address, provider]);
+  }, [address]);
+
+  console.log('Score data:', scoreData);
 
   const copyAddress = () => {
     if (address) {
@@ -98,6 +92,9 @@ const ScoreReport = () => {
           </div>
           <h2 className="text-xl font-semibold text-gray-900 mb-2">Analyzing Wallet</h2>
           <p className="text-gray-600">Calculating credit score from on-chain data...</p>
+          <div className="mt-4 text-sm text-gray-500">
+            This may take a few moments while we analyze transaction history
+          </div>
         </div>
       </div>
     );
@@ -120,46 +117,47 @@ const ScoreReport = () => {
     );
   }
 
+  // Sửa lại breakdown items theo scoreService.ts (5 fields thay vì 6)
   const breakdownItems = [
     {
       title: 'Payment History',
       score: scoreData.breakdown.paymentHistory,
-      summary: 'Track record of loan repayments and payment consistency.',
-      tip: scoreData.breakdown.paymentHistory < 80 ? 'Maintain timely payments to improve this score.' : undefined,
-      icon: <Clock className="w-5 h-5 text-blue-600" />
+      summary: 'Track record of loan repayments, liquidations, and payment consistency in DeFi protocols.',
+      tip: scoreData.breakdown.paymentHistory < 80 ? 'Maintain timely payments and avoid liquidations to improve this score.' : undefined,
+      icon: <Clock className="w-5 h-5 text-blue-600" />,
+      weight: '35%'
     },
     {
-      title: 'Portfolio Diversity',
-      score: scoreData.breakdown.portfolioDiversity,
-      summary: 'Diversification across different assets and protocols.',
-      tip: scoreData.breakdown.portfolioDiversity < 80 ? 'Consider diversifying across more asset types.' : undefined,
-      icon: <PieChart className="w-5 h-5 text-green-600" />
+      title: 'Amounts Owed',
+      score: scoreData.breakdown.amountsOwed,
+      summary: 'Current debt utilization ratio and outstanding loan balances across protocols.',
+      tip: scoreData.breakdown.amountsOwed < 80 ? 'Reduce debt utilization ratio by paying down loans or increasing collateral.' : undefined,
+      icon: <PieChart className="w-5 h-5 text-green-600" />,
+      weight: '30%'
     },
     {
-      title: 'Transaction Volume',
-      score: scoreData.breakdown.transactionVolume,
-      summary: 'Frequency and volume of DeFi interactions.',
-      icon: <TrendingUp className="w-5 h-5 text-purple-600" />
+      title: 'Credit History',
+      score: scoreData.breakdown.creditHistory,
+      summary: 'Length of DeFi activity and consistency of protocol interactions over time.',
+      tip: scoreData.breakdown.creditHistory < 80 ? 'Continue regular DeFi activity to build longer credit history.' : undefined,
+      icon: <TrendingUp className="w-5 h-5 text-purple-600" />,
+      weight: '15%'
     },
     {
-      title: 'Security Score',
-      score: scoreData.breakdown.securityScore,
-      summary: 'Security practices and interaction with verified contracts.',
-      icon: <Shield className="w-5 h-5 text-red-600" />
+      title: 'Credit Mix',
+      score: scoreData.breakdown.creditMix,
+      summary: 'Diversity of DeFi protocol usage including lending, DEX, NFT, and derivatives.',
+      tip: scoreData.breakdown.creditMix < 80 ? 'Interact with different types of DeFi protocols to improve diversity.' : undefined,
+      icon: <Shield className="w-5 h-5 text-red-600" />,
+      weight: '10%'
     },
     {
-      title: 'DeFi Experience',
-      score: scoreData.breakdown.defiExperience,
-      summary: 'Experience level and protocol familiarity.',
-      tip: scoreData.breakdown.defiExperience < 80 ? 'Interact with more established protocols to build experience.' : undefined,
-      icon: <Zap className="w-5 h-5 text-yellow-600" />
-    },
-    {
-      title: 'Liquidity Management',
-      score: scoreData.breakdown.liquidityManagement,
-      summary: 'Ability to maintain adequate liquidity positions.',
-      tip: scoreData.breakdown.liquidityManagement < 80 ? 'Consider maintaining higher stablecoin reserves.' : undefined,
-      icon: <DollarSign className="w-5 h-5 text-blue-600" />
+      title: 'New Credit',
+      score: scoreData.breakdown.newCredit,
+      summary: 'Recent protocol interactions and new credit inquiries in the last 30 days.',
+      tip: scoreData.breakdown.newCredit < 80 ? 'Avoid excessive new protocol interactions in short periods.' : undefined,
+      icon: <Zap className="w-5 h-5 text-yellow-600" />,
+      weight: '10%'
     }
   ];
 
@@ -228,7 +226,7 @@ const ScoreReport = () => {
                 <div className="flex justify-between items-center py-2 border-b border-gray-100">
                   <span className="text-gray-600">Overall Score</span>
                   <span className={`font-semibold ${getScoreColor(scoreData.score)}`}>
-                    {scoreData.score} / 850
+                    {scoreData.score} / 100
                   </span>
                 </div>
                 <div className="flex justify-between items-center py-2 border-b border-gray-100">
@@ -261,7 +259,7 @@ const ScoreReport = () => {
                     'Your score qualifies you for premium lending rates and exclusive DeFi opportunities.' :
                     scoreData.score >= 580 ?
                     'You qualify for most DeFi lending protocols with competitive rates.' :
-                    'Focus on improving payment history and portfolio diversity to access better rates.'
+                    'Focus on improving payment history and reducing debt utilization to access better rates.'
                   }
                 </p>
               </div>
@@ -274,15 +272,65 @@ const ScoreReport = () => {
           <h2 className="text-2xl font-bold text-gray-900 mb-6">Score Breakdown</h2>
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
             {breakdownItems.map((item, index) => (
-              <ScoreBreakdownCard
-                key={index}
-                title={item.title}
-                score={item.score}
-                summary={item.summary}
-                tip={item.tip}
-                icon={item.icon}
-              />
+              <div key={index} className="bg-white rounded-xl p-6 shadow-sm">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center space-x-3">
+                    {item.icon}
+                    <div>
+                      <h3 className="font-semibold text-gray-900">{item.title}</h3>
+                      <span className="text-xs text-gray-500">Weight: {item.weight}</span>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <div className={`text-2xl font-bold ${getScoreColor(item.score)}`}>
+                      {item.score}
+                    </div>
+                    <div className="text-xs text-gray-500">/ 100</div>
+                  </div>
+                </div>
+                
+                {/* Progress bar */}
+                <div className="w-full bg-gray-200 rounded-full h-2 mb-3">
+                  <div 
+                    className={`h-2 rounded-full ${
+                      item.score >= 80 ? 'bg-green-500' : 
+                      item.score >= 60 ? 'bg-yellow-500' : 'bg-red-500'
+                    }`}
+                    style={{ width: `${item.score}%` }}
+                  ></div>
+                </div>
+                
+                <p className="text-sm text-gray-600 mb-2">{item.summary}</p>
+                {item.tip && (
+                  <div className="bg-blue-50 border-l-4 border-blue-400 p-3 mt-3">
+                    <p className="text-sm text-blue-700">💡 {item.tip}</p>
+                  </div>
+                )}
+              </div>
             ))}
+          </div>
+        </div>
+
+        {/* Additional Info */}
+        <div className="bg-white rounded-2xl p-6 shadow-sm">
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">How Your Score is Calculated</h3>
+          <div className="grid md:grid-cols-2 gap-6 text-sm text-gray-600">
+            <div>
+              <h4 className="font-medium text-gray-900 mb-2">Based on FICO methodology adapted for DeFi:</h4>
+              <ul className="space-y-1">
+                <li>• Payment History (35%): Liquidation history and repayment consistency</li>
+                <li>• Amounts Owed (30%): Current debt utilization across protocols</li>
+                <li>• Credit History (15%): Length and consistency of DeFi activity</li>
+              </ul>
+            </div>
+            <div>
+              <h4 className="font-medium text-gray-900 mb-2">Additional factors:</h4>
+              <ul className="space-y-1">
+                <li>• Credit Mix (10%): Diversity of protocol interactions</li>
+                <li>• New Credit (10%): Recent protocol interactions and inquiries</li>
+                <li>• Data sourced from Covalent API and on-chain analysis</li>
+              </ul>
+            </div>
           </div>
         </div>
       </div>
