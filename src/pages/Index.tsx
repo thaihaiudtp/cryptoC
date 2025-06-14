@@ -28,7 +28,7 @@ const Index = () => {
 
     setSearching(true);
     try {
-      if (ethers.isAddress(inputAddress) || inputAddress.endsWith('.eth')) {
+      if (ethers.isAddress(inputAddress) ) {
         navigate(`/score/${inputAddress}`);
       } else {
         throw new Error('Invalid address format');

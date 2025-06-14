@@ -1,4 +1,3 @@
-
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { ethers } from 'ethers';
 import { MetaMaskInpageProvider } from '@metamask/providers';
@@ -42,8 +41,9 @@ export const Web3Provider = ({ children }: { children: ReactNode }) => {
       const provider = new ethers.BrowserProvider(window.ethereum as unknown as ethers.Eip1193Provider);
       console.log('Provider created:', provider);
       
-      console.log('Requesting accounts...');
+      // Lấy địa chỉ ví từ MetaMask, không tạo ví mới
       const accounts = await provider.send('eth_requestAccounts', []);
+      // accounts trả về là địa chỉ ví thực tế của người dùng từ MetaMask
       console.log('Accounts received:', accounts);
       
       if (accounts.length > 0) {

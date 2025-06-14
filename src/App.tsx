@@ -15,6 +15,8 @@ import HowItWorks from "./pages/HowItWorks";
 import NotFound from "./pages/NotFound";
 import { MagicProvider } from "./contexts/MagicContext";
 import AuthCallback from "./pages/AuthCallback";
+import React from "react";
+import { Web3Provider } from "./contexts/Web3Context";
 // ❗ GỌI NGAY Ở ĐÂY — KHÔNG DÙNG useEffect
 createWeb3Modal({
   wagmiConfig: config,
@@ -40,6 +42,7 @@ const App = () => {
             <Toaster />
             <Sonner />
             <BrowserRouter>
+              <Web3Provider>
               <Routes>
                 <Route path="/" element={<Index />} />
                 <Route path="/score/:address" element={<ScoreReport />} />
@@ -47,6 +50,7 @@ const App = () => {
                 <Route path="/auth/callback" element={<AuthCallback />} />
                 <Route path="*" element={<NotFound />} />
               </Routes>
+              </Web3Provider>
             </BrowserRouter>
           </TooltipProvider>
         </ModernWeb3Provider>
