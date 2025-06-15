@@ -83,7 +83,7 @@ const ScoreGauge = ({ score, maxScore = 100 }: ScoreGaugeProps) => {
             className="text-4xl font-bold"
             style={{ color: scoreColor }}
           >
-            {Math.round(animatedScore)}
+            {animatedScore.toFixed(2)}
           </span>
           <span className="text-sm text-gray-500 mt-1">/ {maxScore}</span>
         </div>

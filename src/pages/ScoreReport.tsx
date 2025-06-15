@@ -25,6 +25,7 @@ const ScoreReport = () => {
   const [scoreData, setScoreData] = useState<ScoreData | null>(null);
   const [ensName, setEnsName] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [isContractError, setIsContractError] = useState(false);
 
   useEffect(() => {
     const loadScoreData = async () => {
@@ -33,12 +34,16 @@ const ScoreReport = () => {
       try {
         setLoading(true);
         setError(null);
+        setIsContractError(false);
         
         const data = await fetchWalletScore(address);
         setScoreData(data);
-      } catch (error) {
+      } catch (error: any) {
         console.error('Failed to load score data:', error);
-        setError('Failed to load credit score data. Please check the wallet address and try again.');
+        // Check if error is about smart contract
+        const errorMessage = error.message || '';
+        setIsContractError(errorMessage.includes('smart contract') || errorMessage.includes('không tính điểm'));
+        setError(error.message || 'Failed to load credit score data. Please check the wallet address and try again.');
       } finally {
         setLoading(false);
       }
@@ -161,14 +166,27 @@ const ScoreReport = () => {
   if (error || !scoreData) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="w-16 h-16 bg-red-600 rounded-full flex items-center justify-center mx-auto mb-4">
-            <span className="text-white font-bold text-xl">!</span>
+        <div className="text-center max-w-md px-4">
+          <div className={`w-16 h-16 ${isContractError ? 'bg-yellow-500' : 'bg-red-600'} rounded-full flex items-center justify-center mx-auto mb-4`}>
+            <span className="text-white font-bold text-xl">{isContractError ? '!' : '✕'}</span>
           </div>
-          <h2 className="text-xl font-semibold text-gray-900 mb-2">Error Loading Score</h2>
-          <p className="text-gray-600 mb-4">{error || 'Failed to load wallet data'}</p>
+          <h2 className="text-xl font-semibold text-gray-900 mb-2">
+            {isContractError ? 'Smart Contract Detected' : 'Error Loading Score'}
+          </h2>
+          
+          <div className="bg-white p-4 rounded-lg shadow-sm mb-4">
+            <p className="text-gray-700">{error}</p>
+          </div>
+          
+          {isContractError && (
+            <p className="text-sm text-gray-600 mb-4">
+              SCORE-FI only analyzes wallet addresses (EOAs), not smart contracts. 
+              Please try a different address.
+            </p>
+          )}
+          
           <Link to="/">
-            <Button>Back to Home</Button>
+            <Button>{isContractError ? 'Try Another Address' : 'Back to Home'}</Button>
           </Link>
         </div>
       </div>
@@ -193,7 +211,7 @@ const ScoreReport = () => {
       weight: '30%'
     },
     {
-      title: 'Credit History',
+      title: 'Length of Credit History',
       score: scoreData.breakdown.creditHistory,
       summary: 'Length of DeFi activity and consistency of protocol interactions over time.',
       tip: scoreData.breakdown.creditHistory < 80 ? 'Continue regular DeFi activity to build longer credit history.' : undefined,
@@ -219,6 +237,9 @@ const ScoreReport = () => {
   ];
 
   const scoreInfo = getScoreDescription(scoreData.score);
+
+  // Helper function to format scores with 2 decimal places
+  const formatScore = (score: number) => score.toFixed(2);
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -285,7 +306,7 @@ const ScoreReport = () => {
                 <div className="flex justify-between items-center py-2 border-b border-gray-100">
                   <span className="text-gray-600">Overall Score</span>
                   <span className={`font-semibold ${getScoreColor(scoreData.score)}`}>
-                    {scoreData.score} / 100
+                    {formatScore(scoreData.score)} / 100
                   </span>
                 </div>
                 <div className="flex justify-between items-center py-2 border-b border-gray-100">
@@ -315,10 +336,10 @@ const ScoreReport = () => {
                 scoreData.score >= 50 ? 'bg-orange-50' :
                 scoreData.score >= 30 ? 'bg-red-50' : 'bg-red-100'
               }`}>
-                <p className={`font-medium ${getScoreColor(scoreData.score)}`}>
+                {/* <p className={`font-medium ${getScoreColor(scoreData.score)}`}>
                   {scoreInfo.title}
-                </p>
-                <p className={`text-sm mt-2 ${
+                </p> */}
+                {/* <p className={`text-sm mt-2 ${
                   scoreData.score >= 90 ? 'text-green-700' : 
                   scoreData.score >= 80 ? 'text-blue-700' :
                   scoreData.score >= 65 ? 'text-yellow-700' : 
@@ -335,7 +356,7 @@ const ScoreReport = () => {
                   scoreData.score >= 30 ? 'text-red-800' : 'text-red-900'
                 }`}>
                   💡 {scoreInfo.recommendation}
-                </p>
+                </p> */}
               </div>
             </div>
           </div>
@@ -357,7 +378,7 @@ const ScoreReport = () => {
                   </div>
                   <div className="text-right">
                     <div className={`text-2xl font-bold ${getScoreColor(item.score)}`}>
-                      {item.score}
+                      {formatScore(item.score)}
                     </div>
                     <div className="text-xs text-gray-500">/ 100</div>
                   </div>
